@@ -287,5 +287,6 @@
 ;non_core
 (define step8 (noisy non_core step4 eps))
 ;step8
-
+(define step9 (sort (set_diff non_core step8) <))
+;step9
 
