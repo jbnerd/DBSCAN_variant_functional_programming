@@ -229,7 +229,27 @@
   )
 )
 
+(define (create_N_list N)
+  (if (= N 0) '()
+    (append (create_N_list (- N 1)) (list N))
+  )
+)
+;(create_N_list 10)
 
+(define (is_noisy adj_list eps)
+  (cond
+    ((null? adj_list) #t) 
+    ((>= (list-ref (car adj_list) 1) eps) #f)
+    (else (is_noisy (cdr adj_list) eps))
+  )
+)
+;(is_noisy '((13 2) (7 3) (10 3)) 4)
+
+(define (noisy non_core graph eps)
+  (if (null? non_core) '()
+    (append (if (is_noisy (list-ref graph (- (car non_core) 1)) eps) (list (car non_core)) '()) (noisy (cdr non_core) graph eps))
+  )
+)
 
 (define file_list (file->list "./t0.in"))
 ;file_list
@@ -260,5 +280,12 @@
 ;step5
 (define step6 (core_pts step5 MinPts 0))
 ;step6
-;(sort (cluster 3 '(3) step4 '() step6) <)
-(clustering step4 step6 0)
+;(sort (cluster 3 '(3) step4 '() step6) <) ### testing
+(define step7 (clustering step4 step6 0))
+;step7
+(define non_core (set_diff (create_N_list N) step6))
+;non_core
+(define step8 (noisy non_core step4 eps))
+;step8
+
+
