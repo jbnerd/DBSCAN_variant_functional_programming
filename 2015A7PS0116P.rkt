@@ -76,6 +76,49 @@
   )
 )
 
+(define (sort_by_dist ls)
+  (sort ls
+    (lambda (x y) (<= (list-ref x 1) (list-ref y 1)))
+  )
+)
+;(define temp '((1 48.42207244635446) (2 63.40318525121589) (3 9.005415037631531) (4 11.510139008717486) (5 47.76110970235093) (6 33.486607770868645) (7 1.105983725015878) (8 54.19638456576232) (9 12.289548405047272) (10 68.17098429683996) (11 71.67660636497797) (12 55.7953940751385) (13 63.247174640453316) (14 47.67632116680145) (15 73.54982256946649) (16 8.68386434716711) (17 36.75840176068595) (18 65.23667450138764) (19 10.093854566021836) (20 +inf.0)))
+;(sort_by_dist temp)
+
+(define (sort_matrix matrix)
+  (if (null? matrix) '()
+    (cons (sort_by_dist (car matrix)) (sort_matrix (cdr matrix)))
+  )
+)
+
+(define (knn ls K)
+  (if (= K 0) '()
+    (append (list (car (car ls))) (knn (cdr ls) (- K 1)))
+  )
+)
+;(define temp '((1 48.42207244635446) (2 63.40318525121589) (3 9.005415037631531) (4 11.510139008717486) (5 47.76110970235093) (6 33.486607770868645) (7 1.105983725015878) (8 54.19638456576232) (9 12.289548405047272) (10 68.17098429683996) (11 71.67660636497797) (12 55.7953940751385) (13 63.247174640453316) (14 47.67632116680145) (15 73.54982256946649) (16 8.68386434716711) (17 36.75840176068595) (18 65.23667450138764) (19 10.093854566021836) (20 +inf.0)))
+;(knn temp 4)
+
+(define (knn_matrix matrix K)
+  (if (null? matrix) '()
+    (cons (knn (car matrix) K) (knn_matrix (cdr matrix) K))
+  )
+)
+
+(define (weight knn1 knn2)
+  (if (null? knn1) '()
+    (if (member (car knn1) knn2)
+      (cons (car knn1) (weight (cdr knn1) knn2))
+      (weight (cdr knn1) knn2)
+    )
+  )
+)
+;(weight '(1 2 3 4 7) '(3 4 5 6))
+
+(define (create_edges knn_list knn_matrix)
+  (if (null? knn_list) '()
+    (cons (cons (car knn_list) (weight knn_list (list-ref knn_matrix (car knn_list)))) (create_edges (cdr knn_list) knn_matrix))
+  )
+)
 
 (define file_list (file->list "./t0.in"))
 ;file_list
@@ -88,7 +131,9 @@
 (define inp_list (get_inp raw_inp_list D))
 (define step1 (add_index inp_list 1))
 ;step1
-;(define temp (del_indices step1))
-;temp
 (define step2 (sim_matrix (del_indices step1) 0 N))
 ;step2
+;(sort_matrix step2)
+(define step3 (knn_matrix (sort_matrix step2) K))
+step3
+;(create_edges (car step3) step3)
