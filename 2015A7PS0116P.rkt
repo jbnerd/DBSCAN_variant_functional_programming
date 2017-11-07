@@ -150,18 +150,36 @@
 )
 ;(weight '(5 8 14 12 13) '(12 14 5 1 13))
 
-(define (create_edges knn_list knn_list_copy knn_matrix)
+(define (create_edges knn_list knn_list_copy knn_matrix idx)
   (if (null? knn_list) '()
-    (cons (list (car knn_list) (weight knn_list_copy (list-ref knn_matrix (- (car knn_list) 1)))) (create_edges (cdr knn_list) knn_list_copy knn_matrix))
+    (if (member (+ idx 1) (list-ref knn_matrix (- (car knn_list) 1)))
+      (cons (list (car knn_list) (weight knn_list_copy (list-ref knn_matrix (- (car knn_list) 1)))) (create_edges (cdr knn_list) knn_list_copy knn_matrix idx))
+      (create_edges (cdr knn_list) knn_list_copy knn_matrix idx)
+    )
   )
 )
 
 (define (generate_graph knn_matrix idx len)
   (if (or (null? knn_matrix) (= idx len)) '()
-    (cons (create_edges (list-ref knn_matrix idx) (list-ref knn_matrix idx) knn_matrix) (generate_graph knn_matrix (+ idx 1) N))
+    (cons (create_edges (list-ref knn_matrix idx) (list-ref knn_matrix idx) knn_matrix idx) (generate_graph knn_matrix (+ idx 1) N))
   )
 )
 
+(define (density_list adj_list eps)
+  (if (null? adj_list) '()
+    (if (< (list-ref (car adj_list) 1) eps)
+      (density_list (cdr adj_list) eps)
+      (append (list (list-ref (car adj_list) 1)) (density_list (cdr adj_list) eps))
+    )
+  )
+)
+;(len (density_list '((18 4) (11 3) (15 3) (8 1) (12 1)) 3))
+
+(define (density graph eps)
+  (if (null? graph) '()
+    (append (list (len (density_list (car graph) eps))) (density (cdr graph) eps))
+  )
+)
 
 (define file_list (file->list "./t0.in"))
 ;file_list
@@ -176,14 +194,17 @@
 ;step1
 (define step2 (sim_matrix (del_indices step1) 0 N))
 ;step2
-;(sort_matrix step2)
+;(sort_matrix step2) ### testing
 ;(define temp_step3 (knn_matrix (sort_matrix_by_dist step2) K)) ###redundant step
 ;temp_step3
 (define step3 (sort_matrix_by_index (knn_matrix (sort_matrix_by_dist_asc step2) K)))
 ;step3
+;(sort_by_dist_desc (create_edges '(8 11 12 15 18) '(8 11 12 15 18) step3 1)) ### testing
 ;(define temp_step4 (generate_graph step3 0 N)) ###redundant step
-;temp_step4
+;temp_step4 ###redundant step
 ;(define temp (create_edges (car step3) (car step3) step3)) ### testing
 ;(sort_by_dist_desc temp) ###testing
 (define step4 (sort_matrix_by_dist_desc (generate_graph step3 0 N)))
-step4
+;step4
+(define step5 (density step4 eps))
+step5
