@@ -76,7 +76,7 @@
   )
 )
 
-(define (sort_by_dist ls)
+(define (sort_by_dist_asc ls)
   (sort ls
     (lambda (x y) (<= (list-ref x 1) (list-ref y 1)))
   )
@@ -86,17 +86,31 @@
 
 (define (sort_by_dist_desc ls)
   (sort ls
-    (lambda (x y) (cond
-                    ((< (list-ref x 1) (list-ref y 1)) #f)
-                    ;((not (and (= (list-ref x 1) (list-ref y 1)) (< (car x) (car y)))) #t)
-                  )
-    )
+    (lambda (x y) (> (list-ref x 1) (list-ref y 1)))
   )
 )
 
-(define (sort_matrix matrix)
+(define (sort_by_index_asc ls)
+  (sort ls
+    (lambda (x y) (< (list-ref x 0) (list-ref y 0)))
+  )
+)
+
+(define (sort_matrix_by_dist_asc matrix)
   (if (null? matrix) '()
-    (cons (sort_by_dist (car matrix)) (sort_matrix (cdr matrix)))
+    (cons (sort_by_dist_asc (car matrix)) (sort_matrix_by_dist_asc (cdr matrix)))
+  )
+)
+
+(define (sort_matrix_by_dist_desc matrix)
+  (if (null? matrix) '()
+    (cons (sort_by_dist_desc (car matrix)) (sort_matrix_by_dist_desc (cdr matrix)))
+  )
+)
+
+(define (sort_matrix_by_index matrix)
+  (if (null? matrix) '()
+    (cons (sort (car matrix) <) (sort_matrix_by_index (cdr matrix)))
   )
 )
 
@@ -142,9 +156,9 @@
   )
 )
 
-(define (generate_graph knn_matrix idx)
-  (if (null? knn_matrix) '()
-    (cons (create_edges (list-ref knn_matrix idx) (list-ref knn_matrix idx) (knn_matrix)) (generate_graph knn_matrix (+ idx 1)))
+(define (generate_graph knn_matrix idx len)
+  (if (or (null? knn_matrix) (= idx len)) '()
+    (cons (create_edges (list-ref knn_matrix idx) (list-ref knn_matrix idx) knn_matrix) (generate_graph knn_matrix (+ idx 1) N))
   )
 )
 
@@ -163,7 +177,13 @@
 (define step2 (sim_matrix (del_indices step1) 0 N))
 ;step2
 ;(sort_matrix step2)
-(define step3 (knn_matrix (sort_matrix step2) K))
-step3
-(define temp (create_edges (car step3) (car step3) step3))
-(sort_by_dist_desc temp)
+;(define temp_step3 (knn_matrix (sort_matrix_by_dist step2) K)) ###redundant step
+;temp_step3
+(define step3 (sort_matrix_by_index (knn_matrix (sort_matrix_by_dist_asc step2) K)))
+;step3
+;(define temp_step4 (generate_graph step3 0 N)) ###redundant step
+;temp_step4
+;(define temp (create_edges (car step3) (car step3) step3)) ### testing
+;(sort_by_dist_desc temp) ###testing
+(define step4 (sort_matrix_by_dist_desc (generate_graph step3 0 N)))
+step4
