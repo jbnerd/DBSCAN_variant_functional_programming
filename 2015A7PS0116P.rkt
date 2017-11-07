@@ -181,6 +181,56 @@
   )
 )
 
+(define (core_pts dense_list MinPts idx)
+  (if (null? dense_list) '()
+    (if (>= (car dense_list) MinPts) (append (list (+ idx 1)) (core_pts (cdr dense_list) MinPts (+ idx 1))) (core_pts (cdr dense_list) MinPts (+ idx 1)))
+  )
+)
+
+(define (set_add ls1 ls2)
+  (cond
+    ((null? ls1) ls2)
+    ((member (car ls1) ls2) (set_add (cdr ls1) ls2))
+    (else (append (list (car ls1)) (set_add (cdr ls1) ls2)))
+  )
+)
+;(set_add '(0 1 2 3) '(1 2 3 4))
+
+(define (set_diff ls1 ls2)
+  (cond
+    ((null? ls2) ls1)
+    ((member (car ls2) ls1) (set_diff (remove (car ls2) ls1) (cdr ls2)))
+    (else (set_diff ls1 (cdr ls2)))
+  )
+)
+;(set_diff '(0 1 2 3) '(1 2 3 4))
+
+(define (core_point_list adj_list core_points)
+  (if (null? adj_list) '()
+    (if (member (car (car adj_list)) core_points)
+      (append (list (car (car adj_list))) (core_point_list (cdr adj_list) core_points))
+      (append '() (core_point_list (cdr adj_list) core_points))
+    )
+  )
+)
+;(core_point_list '((1 3) (8 3) (12 3) (10 2)) '(1 3 4 5 7 8 12 14 16 20))
+
+(define (cluster point frontier graph explored core_points)
+  (cond
+    ((null? frontier) explored)
+    ((member (car frontier) explored) (cluster (car frontier) (cdr frontier) graph explored core_points))
+    (else (cluster (car frontier) (set_add (cdr frontier) (core_point_list (list-ref graph (- (car frontier) 1)) core_points)) graph (set_add explored (list (car frontier))) core_points))
+  )
+)
+
+(define (clustering graph core_points idx)
+  (if (null? core_points) '()
+      (cons (cons (+ idx 1) (list (sort (cluster (car core_points) (list (car core_points)) graph '() core_points) <))) (clustering graph (set_diff core_points (cluster (car core_points) (list (car core_points)) graph '() core_points)) (+ idx 1)))
+  )
+)
+
+
+
 (define file_list (file->list "./t0.in"))
 ;file_list
 (define N (list-ref file_list 0))
@@ -207,4 +257,8 @@
 (define step4 (sort_matrix_by_dist_desc (generate_graph step3 0 N)))
 ;step4
 (define step5 (density step4 eps))
-step5
+;step5
+(define step6 (core_pts step5 MinPts 0))
+;step6
+;(sort (cluster 3 '(3) step4 '() step6) <)
+(clustering step4 step6 0)
