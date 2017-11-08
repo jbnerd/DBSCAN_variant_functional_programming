@@ -78,7 +78,7 @@
 
 (define (sort_by_dist_asc ls)
   (sort ls
-    (lambda (x y) (<= (list-ref x 1) (list-ref y 1)))
+    (lambda (x y) (< (list-ref x 1) (list-ref y 1)))
   )
 )
 ;(define temp '((1 48.42207244635446) (2 63.40318525121589) (3 9.005415037631531) (4 11.510139008717486) (5 47.76110970235093) (6 33.486607770868645) (7 1.105983725015878) (8 54.19638456576232) (9 12.289548405047272) (10 68.17098429683996) (11 71.67660636497797) (12 55.7953940751385) (13 63.247174640453316) (14 47.67632116680145) (15 73.54982256946649) (16 8.68386434716711) (17 36.75840176068595) (18 65.23667450138764) (19 10.093854566021836) (20 +inf.0)))
@@ -215,17 +215,45 @@
 )
 ;(core_point_list '((1 3) (8 3) (12 3) (10 2)) '(1 3 4 5 7 8 12 14 16 20))
 
+(define (edge_weight adj_list point)
+  (cond
+    ((null? adj_list) -1)
+    ((= point (car (car adj_list))) (list-ref (car adj_list) 1))
+    (else edge_weight (cdr adj_list) point)
+  )
+)
+;(edge_weight '((1 6) (2 6) (4 6) (5 6) (6 6) (7 6) (8 6) (10 0)) 10)
+
+(define (eps_list adj_list eps)
+  (cond
+    ((null? adj_list) '())
+    ((>= (list-ref (car adj_list) 1) eps) (cons (car adj_list) (eps_list (cdr adj_list) eps)))
+    (else (eps_list (cdr adj_list) eps))
+  )
+)
+;(eps_list '((1 6) (2 6) (4 6) (5 6) (6 6) (7 6) (8 6) (10 0)) 6)
+
+(define (eps_graph graph eps)
+  (if (null? graph) '()
+    (cons (eps_list (car graph) eps) (eps_graph (cdr graph) eps))
+  )
+)
+
 (define (cluster point frontier graph explored core_points)
   (cond
     ((null? frontier) explored)
     ((member (car frontier) explored) (cluster (car frontier) (cdr frontier) graph explored core_points))
-    (else (cluster (car frontier) (set_add (cdr frontier) (core_point_list (list-ref graph (- (car frontier) 1)) core_points)) graph (set_add explored (list (car frontier))) core_points))
+    (else (cluster (car frontier) (set_add (core_point_list (list-ref graph (- (car frontier) 1)) core_points) (cdr frontier)) graph (set_add explored (list (car frontier))) core_points)
+    )
   )
 )
 
 (define (clustering graph core_points idx)
   (if (null? core_points) '()
-      (cons (cons (+ idx 1) (list (sort (cluster (car core_points) (list (car core_points)) graph '() core_points) <))) (clustering graph (set_diff core_points (cluster (car core_points) (list (car core_points)) graph '() core_points)) (+ idx 1)))
+      (cons
+        (cons (+ idx 1) (list (sort (cluster (car core_points) (list (car core_points)) graph '() core_points) <)))
+        (clustering graph (set_diff core_points (cluster (car core_points) (list (car core_points)) graph '() core_points)) (+ idx 1))
+      )
   )
 )
 
@@ -288,7 +316,7 @@
   )
 )
 
-(define file_list (file->list "./t0.in"))
+(define file_list (file->list "./t2.in"))
 ;file_list
 (define N (list-ref file_list 0))
 (define D (list-ref file_list 1))
@@ -313,12 +341,13 @@
 ;(sort_by_dist_desc temp) ###testing
 (define step4 (sort_matrix_by_dist_desc (generate_graph step3 0 N)))
 ;step4
+(define epsilon_graph (eps_graph step4 eps))
 (define step5 (density step4 eps))
 ;step5
 (define step6 (core_pts step5 MinPts 0))
 ;step6
 ;(sort (cluster 3 '(3) step4 '() step6) <) ### testing
-(define step7 (clustering step4 step6 0))
+(define step7 (clustering epsilon_graph step6 0))
 ;step7
 (define non_core (set_diff (create_N_list N) step6))
 ;non_core
@@ -332,4 +361,5 @@
 ;(sort (set_add '(2) (list-ref (list-ref step7 (- (which_cluster (closest_core 2 step6 step3) step7) 1)) 1)) <)
 ;(update_cluster 19 (update_cluster 2 step7 step6 step3) step6 step3)
 (define step10 (final_clusters step9 step7 step6 step3))
-
+step10
+;eps
