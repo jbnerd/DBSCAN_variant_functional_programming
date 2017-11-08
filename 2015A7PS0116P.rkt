@@ -251,6 +251,45 @@
   )
 )
 
+(define (which_cluster point clusters)
+  (cond
+    ((null? clusters) -1)
+    ((member point (list-ref (car clusters) 1)) (list-ref (car clusters) 0))
+    (else (which_cluster point (cdr clusters)))
+  )
+)
+
+(define (sim_to_cores point core_points knn_mat)
+  (if (null? core_points) '()
+    (cons (append (list (car core_points)) (list (weight (list-ref knn_mat (- point 1)) (list-ref knn_mat (- (car core_points) 1))))) (sim_to_cores point (cdr core_points) knn_mat))
+  )
+)
+
+(define (closest_core point core_points knn_mat)
+  (list-ref (car (sort_by_dist_desc (sim_to_cores point core_points knn_mat))) 0)
+)
+
+(define (add_to_cluster point clusters core_points knn_mat)
+  (sort (set_add (list point) (list-ref (car clusters) 1)) <)
+)
+
+(define (update_cluster point clusters core_points knn_mat)
+  (if (null? clusters) '()
+    (if (= (car (car clusters)) (which_cluster (closest_core point core_points knn_mat) clusters))
+      (cons (cons (car (car clusters)) (list (add_to_cluster point clusters core_points knn_mat))) (update_cluster point (cdr clusters) core_points knn_mat))
+      (cons (car clusters) (update_cluster point (cdr clusters) core_points knn_mat))
+    )
+  )
+)
+
+(define (final_clusters border_points clusters core_points knn_mat)
+  (if (null? border_points) clusters
+    (final_clusters (cdr border_points) (update_cluster (car border_points) clusters core_points knn_mat) core_points knn_mat)
+  )
+)
+
+
+
 (define file_list (file->list "./t0.in"))
 ;file_list
 (define N (list-ref file_list 0))
@@ -289,4 +328,12 @@
 ;step8
 (define step9 (sort (set_diff non_core step8) <))
 ;step9
+;(which_cluster 20 step7) ### testing
+;(closest_core 19 step6 step3) ### testing
+;(add_to_cluster 2 step7 step6 step3)
+;(sort (set_add '(2) (list-ref (list-ref step7 (- (which_cluster (closest_core 2 step6 step3) step7) 1)) 1)) <)
+;(update_cluster 19 (update_cluster 2 step7 step6 step3) step6 step3)
+(define step10 (final_clusters step9 step7 step6 step3))
+
+  
 
