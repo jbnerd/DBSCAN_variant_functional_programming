@@ -1,4 +1,7 @@
 #lang racket
+(define args (vector-ref (current-command-line-arguments) 0))
+
+(define precision '6)
 
 (define (truncate_list ls D)
   (cond
@@ -33,6 +36,23 @@
 ;temp_list
 ;(add_index temp_list 0)
 
+(define (mysetprecision n p)
+  (if (= n +inf.0) +inf.0
+      (string->number (~r n #:precision p))
+  )
+) 
+
+(define (precision_util lst)
+  (if (null? lst) '()
+      (cons (list (car(car lst)) (mysetprecision (car(cdr(car lst))) precision))  (precision_util (cdr lst))))
+)
+
+(define (modify_precision lst)
+  (if (null? lst) '()
+  (cons (precision_util (car lst)) (modify_precision (cdr lst))))
+)
+
+
 (define (sq_dist ls1 ls2)
   (if (and (null? ls1) (null? ls2)) 0
     (+ (expt (- (car ls1) (car ls2)) 2) (sq_dist (cdr ls1) (cdr ls2)))
@@ -47,7 +67,7 @@
 (define (point_eq point1 point2)
   (cond
     ((and (null? point1) (null? point2)) #t)
-    ((not (= (car point1) (car point2))) #f)
+    ((not (eq? (car point1) (car point2))) #f)
     (else (point_eq (cdr point1) (cdr point2))) 
   )
 )
@@ -316,7 +336,7 @@
   )
 )
 
-(define file_list (file->list "./t2.in"))
+(define file_list (file->list args))
 ;file_list
 (define N (list-ref file_list 0))
 (define D (list-ref file_list 1))
@@ -327,7 +347,8 @@
 (define inp_list (get_inp raw_inp_list D))
 (define step1 (add_index inp_list 1))
 ;step1
-(define step2 (sim_matrix (del_indices step1) 0 N))
+(define mstep2 (sim_matrix (del_indices step1) 0 N))
+(define step2 (modify_precision mstep2)) 
 ;step2
 ;(sort_matrix step2) ### testing
 ;(define temp_step3 (knn_matrix (sort_matrix_by_dist step2) K)) ###redundant step
@@ -361,5 +382,16 @@
 ;(sort (set_add '(2) (list-ref (list-ref step7 (- (which_cluster (closest_core 2 step6 step3) step7) 1)) 1)) <)
 ;(update_cluster 19 (update_cluster 2 step7 step6 step3) step6 step3)
 (define step10 (final_clusters step9 step7 step6 step3))
-step10
+;step10
 ;eps
+
+(provide step1)
+(provide step2)
+(provide step3)
+(provide step4)
+(provide step5)
+(provide step6)
+(provide step7)
+(provide step8)
+(provide step9)
+(provide step10)
